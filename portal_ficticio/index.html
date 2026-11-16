@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Portal fictício de relatórios</title>
+<style>
+  [hidden] { display: none !important; }
+  body { font-family: system-ui, sans-serif; max-width: 520px; margin: 40px auto; padding: 0 16px; }
+  .aviso { background: #fff7d6; border: 1px solid #e6d27a; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
+  label { display: block; margin-top: 12px; }
+  input, select, button { font-size: 16px; padding: 6px 10px; margin-top: 4px; }
+  .erro { color: #b00020; min-height: 1.2em; }
+  #carregando { position: fixed; inset: 0; background: rgba(255,255,255,.85);
+                display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  #modal-sessao { border: 2px solid #444; padding: 16px; margin-top: 16px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<p class="aviso">Portal <strong>fictício</strong>, usado apenas para demonstrar a automação.
+Não representa nenhum sistema real.</p>
+
+<section id="login">
+  <h2>Entrar</h2>
+  <label>Usuário <input id="usuario" type="text" autocomplete="off"></label>
+  <label>Senha <input id="senha" type="password" autocomplete="off"></label>
+  <p class="erro" id="erro-login"></p>
+  <button id="entrar">Entrar</button>
+</section>
+
+<section id="modal-sessao" hidden>
+  <strong>Sessão ativa em outro local.</strong>
+  <p>Deseja encerrar a outra sessão e continuar aqui?</p>
+  <button id="confirmar-sessao">Encerrar outra sessão</button>
+</section>
+
+<section id="painel" hidden>
+  <h2>Relatório histórico por skill</h2>
+  <label>UF
+    <select id="uf">
+      <option value="SP">SP</option>
+      <option value="CE">CE</option>
+      <option value="RJ">RJ</option>
+    </select>
+  </label>
+  <label>Data <input id="data" type="text" placeholder="dd/mm/aaaa"></label>
+  <p class="erro" id="erro-painel"></p>
+  <button id="gerar">Gerar relatório</button>
+  <div id="resultado" style="margin-top:16px"></div>
+</section>
+
+<div id="carregando" hidden>Carregando...</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+
+$("entrar").onclick = () => {
+  if (!$("usuario").value || !$("senha").value) {
+    $("erro-login").textContent = "Informe usuário e senha.";
+    return;
+  }
+  $("entrar").disabled = true;
+  setTimeout(() => {                       // login "demora" um pouco
+    $("login").hidden = true;
+    if (params.get("sessao_duplicada") === "1") $("modal-sessao").hidden = false;
+    else $("painel").hidden = false;
+  }, 800);
+};
+
+$("confirmar-sessao").onclick = () => {
+  $("modal-sessao").hidden = true;
+  $("painel").hidden = false;
+};
+
+function renderResultado(habilitado) {     // o botão é recriado a cada renderização
+  $("resultado").innerHTML =
+    '<button id="baixar"' + (habilitado ? "" : " disabled") + ">Baixar CSV</button>";
+  if (habilitado) $("baixar").onclick = baixar;
+}
+
+$("gerar").onclick = () => {
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test($("data").value)) {
+    $("erro-painel").textContent = "Data inválida (use dd/mm/aaaa).";
+    return;
+  }
+  $("erro-painel").textContent = "";
+  renderResultado(false);                  // zera o estado do relatório anterior
+  $("carregando").hidden = false;          // overlay cobre a tela
+  setTimeout(() => renderResultado(true), 1500);         // botão habilita...
+  setTimeout(() => { $("carregando").hidden = true; }, 1700);  // ...e o overlay some depois
+};
+
+function baixar() {
+  $("carregando").hidden = false;
+  setTimeout(() => {
+    location.href = "/relatorio.csv?uf=" + encodeURIComponent($("uf").value);
+    setTimeout(() => { $("carregando").hidden = true; }, 300);
+  }, 400);
+}
+</script>
+</body>
+</html>

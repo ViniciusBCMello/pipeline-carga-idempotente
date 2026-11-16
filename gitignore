@@ -1,0 +1,7 @@
+.env
+dados_ficticios/
+__pycache__/
+*.pyc
+logs/
+downloads/
+*.pkl
